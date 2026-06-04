@@ -18,9 +18,14 @@ async function main() {
   // 1. fetch en paralelo, tolerante a fallos
   const raw = await Promise.all(
     FETCHERS.map(async (f) => {
-      const items = await f.fetch();
-      console.log(`[fetch] ${f.name}: ${items.length}`);
-      return items.map((r) => normalize(f.name, r));
+      try {
+        const items = await f.fetch();
+        console.log(`[fetch] ${f.name}: ${items.length}`);
+        return items.map((r) => normalize(f.name, r));
+      } catch (e) {
+        console.error(`[fetch] ${f.name} falló: ${(e as Error).message}`);
+        return [];
+      }
     }),
   );
   const jobs: Job[] = raw.flat();
@@ -36,9 +41,11 @@ async function main() {
   // 5. score IA (umbral)
   const client = buildClient();
   const scored: ScoredJob[] = [];
+  const evaluated: Job[] = []; // solo las que el scorer evaluó sin lanzar
   for (const job of candidates) {
     try {
       const score = await scoreJob(client, job, profile);
+      evaluated.push(job);
       if (score.score >= cfg.threshold) scored.push({ ...job, score });
     } catch (e) {
       console.error(`[score] omitida ${job.id}: ${(e as Error).message}`);
@@ -63,8 +70,9 @@ async function main() {
     });
   }
 
-  // 7. persistir estado: todas las candidatas evaluadas se marcan vistas
-  const next = purge(markSeen(seen, candidates, nowISO), nowISO, 60);
+  // 7. persistir estado: solo las evaluadas con éxito se marcan vistas
+  // (las que el scorer no pudo evaluar se reintentan en la próxima corrida)
+  const next = purge(markSeen(seen, evaluated, nowISO), nowISO, 60);
   saveSeen(next);
 }
 
