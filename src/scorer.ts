@@ -3,7 +3,7 @@ import type { Job, Score } from "./types.js";
 
 // Sonnet: el modelo disponible en suscripción (Haiku solo va por API key).
 const MODEL = "claude-sonnet-4-6";
-const TIMEOUT_MS = 120_000; // tope duro por lote
+const TIMEOUT_MS = 180_000; // tope duro por lote (~74s observado para 12; 2.4x de margen)
 const DEBUG = !!process.env.JOBFINDER_DEBUG;
 
 const SYSTEM =
