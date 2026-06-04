@@ -3,7 +3,7 @@ import { FETCHERS } from "./fetchers/index.js";
 import { normalize } from "./normalize.js";
 import { loadRules, passesRules } from "./rules.js";
 import { loadSeen, saveSeen, filterUnseen, markSeen, purge } from "./state.js";
-import { buildClient, scoreJob } from "./scorer.js";
+import { scoreJob } from "./scorer.js";
 import { sendDigest } from "./email.js";
 import type { Job, ScoredJob } from "./types.js";
 
@@ -39,12 +39,11 @@ async function main() {
   console.log(`[pipeline] candidatas tras reglas+dedup: ${candidates.length}`);
 
   // 5. score IA (umbral)
-  const client = buildClient();
   const scored: ScoredJob[] = [];
   const evaluated: Job[] = []; // solo las que el scorer evaluó sin lanzar
   for (const job of candidates) {
     try {
-      const score = await scoreJob(client, job, profile);
+      const score = await scoreJob(job, profile);
       evaluated.push(job);
       if (score.score >= cfg.threshold) scored.push({ ...job, score });
     } catch (e) {

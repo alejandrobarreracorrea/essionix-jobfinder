@@ -1,53 +1,48 @@
-import Anthropic from "@anthropic-ai/sdk";
+import { query } from "@anthropic-ai/claude-agent-sdk";
 import type { Job, Score } from "./types.js";
 
-const MODEL = "claude-haiku-4-5";
+// Sonnet: el modelo disponible en suscripción (Haiku solo va por API key).
+const MODEL = "claude-sonnet-4-6";
 
-const TOOL: Anthropic.Messages.Tool = {
-  name: "report_score",
-  description: "Reporta el puntaje de encaje de la oferta con el perfil.",
-  input_schema: {
-    type: "object",
-    properties: {
-      score: { type: "number", description: "0-100" },
-      reason: { type: "string", description: "1-2 frases" },
-      highlights: { type: "array", items: { type: "string" } },
+const SYSTEM =
+  "Eres un evaluador de ofertas de empleo. Devuelve SOLO un objeto JSON válido " +
+  "(sin markdown, sin ```, sin texto antes ni después) con exactamente estas claves: " +
+  '"score" (número 0-100), "reason" (1-2 frases), "highlights" (array de strings). ' +
+  "Premia: contractor/freelance, remoto, español, DevOps/SRE/Cloud, y el combo SRE+DBA. " +
+  "Penaliza: on-site, relocation obligatorio, roles solo-junior.";
+
+// Usa el Claude Agent SDK, autenticado con la suscripción (CLAUDE_CODE_OAUTH_TOKEN)
+// — no requiere saldo de API. Una llamada por oferta, sin herramientas (solo texto).
+export async function scoreJob(job: Job, profile: string): Promise<Score> {
+  const prompt =
+    `PERFIL DEL CANDIDATO:\n${profile}\n\n` +
+    `OFERTA:\nTítulo: ${job.title}\nEmpresa: ${job.company}\n` +
+    `Ubicación: ${job.location}\nFuente: ${job.source}\n` +
+    `Descripción: ${job.description.slice(0, 4000)}\n\n` +
+    "Puntúa qué tan bien encaja la oferta con el perfil. Devuelve solo el JSON.";
+
+  let text = "";
+  for await (const message of query({
+    prompt,
+    options: {
+      systemPrompt: SYSTEM,
+      model: MODEL,
+      maxTurns: 1,
+      disallowedTools: [
+        "Bash", "Read", "Write", "Edit", "Glob", "Grep",
+        "WebSearch", "WebFetch", "AskUserQuestion", "Task", "Monitor",
+      ],
     },
-    required: ["score", "reason", "highlights"],
-  },
-};
+  })) {
+    if (message.type === "result") {
+      const m = message as { structured_output?: unknown; result?: string };
+      if (m.structured_output) return m.structured_output as Score;
+      if (typeof m.result === "string") text = m.result;
+    }
+  }
 
-export function buildClient(apiKey = process.env.ANTHROPIC_API_KEY): Anthropic {
-  return new Anthropic({ apiKey });
-}
-
-export async function scoreJob(client: Anthropic, job: Job, profile: string): Promise<Score> {
-  const res = await client.messages.create({
-    model: MODEL,
-    max_tokens: 512,
-    tools: [TOOL],
-    tool_choice: { type: "tool", name: "report_score" },
-    system: [
-      {
-        type: "text",
-        text:
-          "Eres un evaluador de ofertas de empleo. Puntúa de 0-100 qué tan bien encaja la oferta con el perfil. " +
-          "Premia: contractor/freelance, remoto, español, DevOps/SRE/Cloud, y el combo SRE+DBA. " +
-          "Penaliza: on-site, relocation, solo-junior.\n\nPERFIL:\n" + profile,
-        cache_control: { type: "ephemeral" },
-      },
-    ],
-    messages: [
-      {
-        role: "user",
-        content:
-          `Oferta:\nTítulo: ${job.title}\nEmpresa: ${job.company}\n` +
-          `Ubicación: ${job.location}\nFuente: ${job.source}\n` +
-          `Descripción: ${job.description.slice(0, 4000)}`,
-      },
-    ],
-  });
-  const block = res.content.find((b) => b.type === "tool_use");
-  if (!block || block.type !== "tool_use") throw new Error("sin tool_use en la respuesta");
-  return block.input as unknown as Score;
+  // Fallback robusto: extraer el primer objeto JSON del texto.
+  const match = text.match(/\{[\s\S]*\}/);
+  if (!match) throw new Error(`scorer: sin JSON en la respuesta: ${text.slice(0, 200)}`);
+  return JSON.parse(match[0]) as Score;
 }
