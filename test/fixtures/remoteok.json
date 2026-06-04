@@ -1,0 +1,4 @@
+[
+  { "legal": "primer elemento es metadata, se ignora" },
+  { "position": "Senior SRE", "company": "Acme", "location": "Worldwide", "url": "https://remoteok.com/remote-jobs/1", "description": "<p>AWS, Terraform</p>", "date": "2026-06-03T00:00:00+00:00", "salary_min": 90000 }
+]
