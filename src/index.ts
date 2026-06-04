@@ -65,7 +65,8 @@ async function main() {
   }
   if (scored.length > 0) {
     await sendDigest(scored, {
-      apiKey: process.env.RESEND_API_KEY!,
+      user: process.env.GMAIL_USER!,
+      appPassword: process.env.GMAIL_APP_PASSWORD!,
       to: process.env.DIGEST_TO!,
     });
   }

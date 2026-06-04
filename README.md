@@ -1,6 +1,6 @@
 # essionix-jobfinder
 
-Pipeline diario que descubre ofertas **contractor / remoto / español** para **DevOps / Cloud / SRE**, las puntúa con Claude y envía un email rankeado (Resend).
+Pipeline diario que descubre ofertas **contractor / remoto / español** para **DevOps / Cloud / SRE**, las puntúa con Claude y envía un email rankeado (Gmail SMTP).
 
 ## Cómo funciona
 GitHub Action (cron diario) → fetchers multi-fuente → normaliza → reglas → dedup contra `state/seen.json` → scorer IA (Claude Haiku) → email con las ofertas nuevas que superan el umbral. El estado se commitea de vuelta al repo para no repetir ofertas.
@@ -11,12 +11,18 @@ Fuentes: RemoteOK, Remotive, WeWorkRemotely, Himalayas, GetOnBrd, Torre y Linked
 1. Edita `config/profile.md` (tu perfil; el scorer puntúa contra esto) y `config/rules.json` (keywords include/exclude + `threshold`, por defecto 65).
 2. En GitHub → Settings → Secrets and variables → Actions, define:
    - `ANTHROPIC_API_KEY` — tu API key de Claude.
-   - `RESEND_API_KEY` — API key de [Resend](https://resend.com).
-   - `DIGEST_TO` — email destino del resumen.
+   - `GMAIL_USER` — tu cuenta Gmail remitente (ej. `tucuenta@gmail.com`).
+   - `GMAIL_APP_PASSWORD` — una App Password de Google (ver abajo).
+   - `DIGEST_TO` — email destino del resumen (puede ser el mismo Gmail).
 3. El cron corre 07:00 Colombia (12:00 UTC). También puedes dispararlo manual en Actions → jobfinder → Run workflow.
 
-### Email (Resend)
-Para pruebas, el remitente por defecto es `onboarding@resend.dev` (no requiere dominio). Para producción, verifica un dominio en Resend y ajusta el `from` en `src/email.ts`.
+### Email (Gmail SMTP)
+El envío usa el SMTP de Gmail vía `nodemailer`. Necesitas una **App Password** (no tu contraseña normal):
+1. Activa la verificación en 2 pasos (2FA) en tu cuenta de Google.
+2. Ve a https://myaccount.google.com/apppasswords y genera una contraseña de aplicación (16 caracteres).
+3. Úsala como `GMAIL_APP_PASSWORD`; pon tu correo en `GMAIL_USER`.
+
+Límite de Gmail: ~500 correos/día (el pipeline envía 1/día). El remitente por defecto es `JobFinder <GMAIL_USER>`; ajústalo en `src/email.ts` si quieres.
 
 ## Desarrollo local
 - `npm install`

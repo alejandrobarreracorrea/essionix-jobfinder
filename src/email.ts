@@ -1,4 +1,4 @@
-import { Resend } from "resend";
+import nodemailer from "nodemailer";
 import type { ScoredJob } from "./types.js";
 
 export function renderDigest(jobs: ScoredJob[]): string {
@@ -29,16 +29,20 @@ function escapeHtml(s: string): string {
   return s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]!));
 }
 
+// Envío vía SMTP de Gmail. `user` es la cuenta Gmail, `appPassword` es una
+// App Password de Google (requiere 2FA), NO la contraseña normal de la cuenta.
 export async function sendDigest(
   jobs: ScoredJob[],
-  opts: { apiKey: string; to: string; from?: string },
+  opts: { user: string; appPassword: string; to: string; from?: string },
 ): Promise<void> {
-  const resend = new Resend(opts.apiKey);
-  const { error } = await resend.emails.send({
-    from: opts.from ?? "JobFinder <onboarding@resend.dev>",
+  const transport = nodemailer.createTransport({
+    service: "gmail",
+    auth: { user: opts.user, pass: opts.appPassword },
+  });
+  await transport.sendMail({
+    from: opts.from ?? `JobFinder <${opts.user}>`,
     to: opts.to,
     subject: `JobFinder — ${jobs.length} ofertas nuevas`,
     html: renderDigest(jobs),
   });
-  if (error) throw new Error(`Resend: ${JSON.stringify(error)}`);
 }
