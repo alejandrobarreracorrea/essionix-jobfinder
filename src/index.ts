@@ -38,16 +38,27 @@ async function main() {
   );
   console.log(`[pipeline] candidatas tras reglas+dedup: ${candidates.length}`);
 
-  // 5. score IA (umbral)
+  // 5. score IA (umbral). JOBFINDER_MAX_SCORE limita cuántas puntuar (debug).
+  const maxScore = process.env.JOBFINDER_MAX_SCORE
+    ? Number(process.env.JOBFINDER_MAX_SCORE)
+    : Infinity;
   const scored: ScoredJob[] = [];
   const evaluated: Job[] = []; // solo las que el scorer evaluó sin lanzar
+  let attempted = 0;
   for (const job of candidates) {
+    if (attempted >= maxScore) {
+      console.log(`[pipeline] límite JOBFINDER_MAX_SCORE=${maxScore} alcanzado, paro de puntuar`);
+      break;
+    }
+    attempted++;
+    const t0 = Date.now();
     try {
       const score = await scoreJob(job, profile);
       evaluated.push(job);
+      console.log(`[score] ${job.id} = ${score.score} (${Date.now() - t0}ms) ${job.title.slice(0, 60)}`);
       if (score.score >= cfg.threshold) scored.push({ ...job, score });
     } catch (e) {
-      console.error(`[score] omitida ${job.id}: ${(e as Error).message}`);
+      console.error(`[score] omitida ${job.id} (${Date.now() - t0}ms): ${(e as Error).message}`);
     }
   }
   scored.sort((a, b) => b.score.score - a.score.score);

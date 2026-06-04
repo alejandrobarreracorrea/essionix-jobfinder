@@ -2,7 +2,16 @@ name: jobfinder
 on:
   schedule:
     - cron: "0 12 * * *"   # 12:00 UTC = 07:00 Colombia (GMT-5)
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      max_score:
+        description: "Límite de ofertas a puntuar (debug). Vacío = todas."
+        required: false
+        default: ""
+      debug:
+        description: "Logs verbosos del agente (1 = on)."
+        required: false
+        default: ""
 
 permissions:
   contents: write
@@ -26,6 +35,8 @@ jobs:
           GMAIL_USER: ${{ secrets.GMAIL_USER }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
           DIGEST_TO: ${{ secrets.DIGEST_TO }}
+          JOBFINDER_MAX_SCORE: ${{ inputs.max_score }}
+          JOBFINDER_DEBUG: ${{ inputs.debug }}
         run: |
           # Limpiar espacios/saltos de línea que se cuelan al pegar el secret
           # (un header HTTP no admite \n → "Header has invalid value").
