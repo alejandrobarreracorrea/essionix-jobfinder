@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.100.1",
-    "fast-xml-parser": "^4.5.0",
+    "fast-xml-parser": "^5.8.0",
     "resend": "^4.0.0"
   },
   "devDependencies": {
