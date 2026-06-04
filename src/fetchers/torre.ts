@@ -7,11 +7,13 @@ export const torre: Fetcher = {
         method: "POST",
         headers: { "Content-Type": "application/json", "User-Agent": "essionix-jobfinder" },
         body: JSON.stringify({ remote: true, "skill/role": { text: "devops" } }),
+        signal: AbortSignal.timeout(30_000),
       });
       if (!res.ok) return [];
-      const data = JSON.parse(await res.text()) as any[];
-      return data
-        .filter((d) => d && d.id && d.objective)
+      const data = JSON.parse(await res.text());
+      const list = Array.isArray(data) ? data : [];
+      return list
+        .filter((d: any) => d && d.id && d.objective)
         .map((d) => ({
           title: d.objective,
           company: d.organizations?.[0]?.name ?? "",

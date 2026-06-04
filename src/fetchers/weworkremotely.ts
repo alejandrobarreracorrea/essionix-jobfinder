@@ -1,11 +1,12 @@
 import { XMLParser } from "fast-xml-parser";
 import type { Fetcher, RawJob } from "../types.js";
 const parser = new XMLParser();
+const stripHtml = (s: string) => s.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
 export const weworkremotely: Fetcher = {
   name: "weworkremotely",
   async fetch(): Promise<RawJob[]> {
     try {
-      const res = await fetch("https://weworkremotely.com/categories/remote-devops-sysadmin-jobs.rss", { headers: { "User-Agent": "essionix-jobfinder" } });
+      const res = await fetch("https://weworkremotely.com/categories/remote-devops-sysadmin-jobs.rss", { headers: { "User-Agent": "essionix-jobfinder" }, signal: AbortSignal.timeout(30_000) });
       if (!res.ok) return [];
       const xml = parser.parse(await res.text());
       const items = xml?.rss?.channel?.item;
@@ -17,7 +18,7 @@ export const weworkremotely: Fetcher = {
         return {
           title, company: rest.length ? company.trim() : "",
           location: String(it.region ?? "Remote"), url: String(it.link ?? ""),
-          description: String(it.description ?? ""),
+          description: stripHtml(String(it.description ?? "")),
           postedAt: it.pubDate ? new Date(String(it.pubDate)).toISOString() : null,
           salary: null, remote: true,
         };

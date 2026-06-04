@@ -5,7 +5,7 @@ export const linkedin: Fetcher = {
   name: "linkedin",
   async fetch(): Promise<RawJob[]> {
     try {
-      const res = await fetch(BASE, { headers: { "User-Agent": "Mozilla/5.0 essionix-jobfinder" } });
+      const res = await fetch(BASE, { headers: { "User-Agent": "Mozilla/5.0 essionix-jobfinder" }, signal: AbortSignal.timeout(30_000) });
       if (!res.ok) return [];
       const html = await res.text();
       const cards = html.split("<li>").filter((c) => c.includes("base-card"));

@@ -4,7 +4,7 @@ export const remotive: Fetcher = {
   name: "remotive",
   async fetch(): Promise<RawJob[]> {
     try {
-      const res = await fetch("https://remotive.com/api/remote-jobs?category=devops", { headers: { "User-Agent": "essionix-jobfinder" } });
+      const res = await fetch("https://remotive.com/api/remote-jobs?category=devops", { headers: { "User-Agent": "essionix-jobfinder" }, signal: AbortSignal.timeout(30_000) });
       if (!res.ok) return [];
       const data = JSON.parse(await res.text()) as { jobs?: any[] };
       return (data.jobs ?? []).map((d) => ({

@@ -4,7 +4,7 @@ export const remoteok: Fetcher = {
   name: "remoteok",
   async fetch(): Promise<RawJob[]> {
     try {
-      const res = await fetch("https://remoteok.com/api", { headers: { "User-Agent": "essionix-jobfinder" } });
+      const res = await fetch("https://remoteok.com/api", { headers: { "User-Agent": "essionix-jobfinder" }, signal: AbortSignal.timeout(30_000) });
       if (!res.ok) return [];
       const data = JSON.parse(await res.text()) as any[];
       return data.filter((d) => d && d.position && d.url).map((d) => ({

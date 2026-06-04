@@ -4,7 +4,7 @@ export const getonbrd: Fetcher = {
   name: "getonbrd",
   async fetch(): Promise<RawJob[]> {
     try {
-      const res = await fetch("https://www.getonbrd.com/api/v0/categories/programming/jobs", { headers: { "User-Agent": "essionix-jobfinder" } });
+      const res = await fetch("https://www.getonbrd.com/api/v0/categories/programming/jobs", { headers: { "User-Agent": "essionix-jobfinder" }, signal: AbortSignal.timeout(30_000) });
       if (!res.ok) return [];
       const data = JSON.parse(await res.text()) as { data?: any[] };
       return (data.data ?? []).map((d) => ({

@@ -4,10 +4,10 @@ export const himalayas: Fetcher = {
   name: "himalayas",
   async fetch(): Promise<RawJob[]> {
     try {
-      const res = await fetch("https://himalayas.app/jobs/api?limit=50", { headers: { "User-Agent": "essionix-jobfinder" } });
+      const res = await fetch("https://himalayas.app/jobs/api?limit=50", { headers: { "User-Agent": "essionix-jobfinder" }, signal: AbortSignal.timeout(30_000) });
       if (!res.ok) return [];
       const data = JSON.parse(await res.text()) as { jobs?: any[] };
-      return (data.jobs ?? []).map((d) => {
+      return (data.jobs ?? []).filter((d: any) => d && d.applicationLink).map((d) => {
         const loc = Array.isArray(d.locationRestrictions)
           ? d.locationRestrictions.join(", ")
           : d.locationRestrictions ? String(d.locationRestrictions) : "Remote";
