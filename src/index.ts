@@ -3,7 +3,7 @@ import { FETCHERS } from "./fetchers/index.js";
 import { normalize } from "./normalize.js";
 import { loadRules, passesRules } from "./rules.js";
 import { loadSeen, saveSeen, filterUnseen, markSeen, purge } from "./state.js";
-import { scoreJob } from "./scorer.js";
+import { scoreBatch } from "./scorer.js";
 import { sendDigest } from "./email.js";
 import type { Job, ScoredJob } from "./types.js";
 
@@ -38,27 +38,30 @@ async function main() {
   );
   console.log(`[pipeline] candidatas tras reglas+dedup: ${candidates.length}`);
 
-  // 5. score IA (umbral). JOBFINDER_MAX_SCORE limita cuántas puntuar (debug).
+  // 5. score IA en lotes (umbral). JOBFINDER_MAX_SCORE limita cuántas puntuar (debug).
   const maxScore = process.env.JOBFINDER_MAX_SCORE
     ? Number(process.env.JOBFINDER_MAX_SCORE)
     : Infinity;
+  const BATCH = 12;
+  const toScore = candidates.slice(0, maxScore);
   const scored: ScoredJob[] = [];
-  const evaluated: Job[] = []; // solo las que el scorer evaluó sin lanzar
-  let attempted = 0;
-  for (const job of candidates) {
-    if (attempted >= maxScore) {
-      console.log(`[pipeline] límite JOBFINDER_MAX_SCORE=${maxScore} alcanzado, paro de puntuar`);
-      break;
-    }
-    attempted++;
+  const evaluated: Job[] = []; // solo las que el scorer devolvió un puntaje
+  for (let i = 0; i < toScore.length; i += BATCH) {
+    const chunk = toScore.slice(i, i + BATCH);
     const t0 = Date.now();
     try {
-      const score = await scoreJob(job, profile);
-      evaluated.push(job);
-      console.log(`[score] ${job.id} = ${score.score} (${Date.now() - t0}ms) ${job.title.slice(0, 60)}`);
-      if (score.score >= cfg.threshold) scored.push({ ...job, score });
+      const scores = await scoreBatch(chunk, profile);
+      for (const job of chunk) {
+        const s = scores.get(job.id);
+        if (!s) continue; // no devuelta → no evaluada → se reintenta
+        evaluated.push(job);
+        if (s.score >= cfg.threshold) scored.push({ ...job, score: s });
+      }
+      console.log(
+        `[score] lote ${i / BATCH + 1}: ${scores.size}/${chunk.length} puntuadas (${Date.now() - t0}ms)`,
+      );
     } catch (e) {
-      console.error(`[score] omitida ${job.id} (${Date.now() - t0}ms): ${(e as Error).message}`);
+      console.error(`[score] lote ${i / BATCH + 1} falló (${Date.now() - t0}ms): ${(e as Error).message}`);
     }
   }
   scored.sort((a, b) => b.score.score - a.score.score);
