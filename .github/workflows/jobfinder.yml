@@ -18,14 +18,19 @@ jobs:
           cache: "npm"
       - run: npm ci
       - run: npm test
-      - run: npm start
+      - name: Run jobfinder
         env:
           # Token de suscripción (Max) generado con `claude setup-token`.
           # OJO: NO definir ANTHROPIC_API_KEY aquí — tiene prioridad sobre el token.
-          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          CLAUDE_CODE_OAUTH_TOKEN_RAW: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           GMAIL_USER: ${{ secrets.GMAIL_USER }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
           DIGEST_TO: ${{ secrets.DIGEST_TO }}
+        run: |
+          # Limpiar espacios/saltos de línea que se cuelan al pegar el secret
+          # (un header HTTP no admite \n → "Header has invalid value").
+          export CLAUDE_CODE_OAUTH_TOKEN="$(printf '%s' "$CLAUDE_CODE_OAUTH_TOKEN_RAW" | tr -d '[:space:]')"
+          npm start
       - name: Commit estado
         run: |
           git config user.name "github-actions[bot]"
