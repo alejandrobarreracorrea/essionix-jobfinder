@@ -12,7 +12,7 @@ export function renderDigest(jobs: ScoredJob[]): string {
       <div style="color:#334155">${escapeHtml(j.company)} — ${escapeHtml(j.location)}</div>
       <div style="margin:8px 0;color:#475569">${escapeHtml(j.score.reason)}</div>
       <div style="font-size:12px;color:#0f766e">${j.score.highlights.map(escapeHtml).join(" · ")}</div>
-      <a href="${j.url}" style="display:inline-block;margin-top:8px;background:#0f172a;color:#fff;
+      <a href="${escapeHtml(j.url)}" style="display:inline-block;margin-top:8px;background:#0f172a;color:#fff;
          padding:8px 14px;border-radius:6px;text-decoration:none">Postular</a>
     </div>`,
     )
