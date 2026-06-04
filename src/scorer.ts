@@ -1,13 +1,13 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { Job, Score } from "./types.js";
 
-const MODEL = "claude-haiku-4-5-20251001";
+const MODEL = "claude-haiku-4-5";
 
-const TOOL = {
+const TOOL: Anthropic.Messages.Tool = {
   name: "report_score",
   description: "Reporta el puntaje de encaje de la oferta con el perfil.",
   input_schema: {
-    type: "object" as const,
+    type: "object",
     properties: {
       score: { type: "number", description: "0-100" },
       reason: { type: "string", description: "1-2 frases" },
@@ -22,9 +22,7 @@ export function buildClient(apiKey = process.env.ANTHROPIC_API_KEY): Anthropic {
 }
 
 export async function scoreJob(client: Anthropic, job: Job, profile: string): Promise<Score> {
-  const res = await (client.messages.create as (arg: unknown) => Promise<{
-    content: Array<{ type: string; name?: string; input?: unknown }>;
-  }>)({
+  const res = await client.messages.create({
     model: MODEL,
     max_tokens: 512,
     tools: [TOOL],
