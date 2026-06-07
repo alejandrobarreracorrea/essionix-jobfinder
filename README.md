@@ -5,7 +5,9 @@ Pipeline diario que descubre ofertas **contractor / remoto / español** para **D
 ## Cómo funciona
 GitHub Action (cron diario) → fetchers multi-fuente → normaliza → reglas → dedup contra `state/seen.json` → scorer IA (Claude Sonnet vía Agent SDK) → email con las ofertas nuevas que superan el umbral. El estado se commitea de vuelta al repo para no repetir ofertas.
 
-Fuentes (catálogo de 11): RemoteOK, Remotive, WeWorkRemotely, Himalayas, GetOnBrd, Jobicy, WorkingNomads, Arbeitnow, TheMuse, Torre y LinkedIn (las últimas best-effort, sin login — sin riesgo para tu cuenta).
+Fuentes (catálogo de 12): RemoteOK, Remotive, WeWorkRemotely, Himalayas, GetOnBrd, **Jooble** (agregador hispano), Jobicy, WorkingNomads, Arbeitnow, TheMuse, Torre y LinkedIn (las últimas best-effort, sin login — sin riesgo para tu cuenta).
+
+**Jooble** cubre los portales nacionales hispanos que NO tienen API (Computrabajo, elempleo, Bumeran, OCC, Laborum…) consultando MX/AR/CL/PE/EC/CO/ES. Requiere `JOOBLE_API_KEY` (gratis en https://jooble.org/api/about); sin la key devuelve 0.
 
 **Cobertura progresiva:** no se usan los 11 portales de golpe. Arranca con los 5 probados (RemoteOK, Remotive, WeWorkRemotely, Himalayas, GetOnBrd) y **activa 2 portales nuevos cada 2 días** hasta tener los 11 (≈día 6). El estado vive en `state/sources.json` (`activeCount` + `lastExpandedISO`), versionado. Para forzar/reiniciar la cobertura, edita ese archivo (ej. `activeCount: 11` para activarlos todos ya, o `lastExpandedISO: ""` para reiniciar el reloj). El orden de activación es el del array en `src/fetchers/index.ts`.
 

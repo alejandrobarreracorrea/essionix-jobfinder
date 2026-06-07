@@ -1,0 +1,17 @@
+{
+  "totalCount": 1,
+  "jobs": [
+    {
+      "title": "DevOps Engineer (Remoto)",
+      "location": "Remoto - LATAM",
+      "snippet": "<p>AWS, Terraform, Kubernetes. Contractor.</p>",
+      "salary": "",
+      "source": "computrabajo.com",
+      "type": "",
+      "link": "https://jooble.org/jdp/123456",
+      "company": "Acme Cloud",
+      "updated": "2026-06-05T10:00:00.0000000",
+      "id": 123456
+    }
+  ]
+}
