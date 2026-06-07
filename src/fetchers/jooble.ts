@@ -9,8 +9,12 @@ const REMOTE = /\b(remote|remoto|remota|teletrabajo|home\s?office)\b/i;
 
 // Jooble geocodifica por CIUDAD, no por país ("Colombia"→0, "Bogota"→62). Usamos
 // "Remote" (pozo grande de remotos) + las capitales de cada país hispano (sin acentos).
-const COUNTRIES = ["Remote", "Bogota", "Mexico", "Buenos Aires", "Santiago", "Lima", "Quito", "Madrid"];
-const KEYWORDS = "devops";
+// Para Argentina, "Buenos Aires" da poco con "devops"; ampliamos con Cordoba y más keywords.
+const LOCATIONS = [
+  "Remote", "Bogota", "Mexico", "Buenos Aires", "Cordoba",
+  "Santiago", "Lima", "Quito", "Madrid",
+];
+const KEYWORDS = ["devops", "sre", "cloud"];
 const DEBUG = !!process.env.JOBFINDER_DEBUG;
 
 export const jooble: Fetcher = {
@@ -23,43 +27,45 @@ export const jooble: Fetcher = {
     }
     if (DEBUG) console.error(`[jooble] key presente (len=${key.length})`);
     const out: RawJob[] = [];
-    for (const location of COUNTRIES) {
-      try {
-        const res = await fetch(`https://jooble.org/api/${key}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "User-Agent": "essionix-jobfinder" },
-          body: JSON.stringify({ keywords: KEYWORDS, location }),
-          signal: AbortSignal.timeout(30_000),
-        });
-        const body = await res.text();
-        if (!res.ok) {
-          if (DEBUG) console.error(`[jooble] ${location}: HTTP ${res.status} body=${body.slice(0, 200)}`);
-          continue;
-        }
-        const data = JSON.parse(body) as { jobs?: any[]; totalCount?: number };
-        if (DEBUG) {
-          console.error(
-            `[jooble] ${location}: ${(data.jobs ?? []).length} jobs (totalCount=${data.totalCount ?? "?"})`,
-          );
-        }
-        for (const j of data.jobs ?? []) {
-          if (!j || !j.title || !j.link) continue;
-          const loc = String(j.location ?? location);
-          const snippet = stripHtml(String(j.snippet ?? ""));
-          out.push({
-            title: String(j.title),
-            company: String(j.company ?? ""),
-            location: loc,
-            url: String(j.link),
-            description: snippet,
-            postedAt: typeof j.updated === "string" ? j.updated : null,
-            salary: j.salary || null,
-            remote: REMOTE.test(`${j.title} ${loc} ${snippet}`),
+    for (const keywords of KEYWORDS) {
+      for (const location of LOCATIONS) {
+        try {
+          const res = await fetch(`https://jooble.org/api/${key}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "User-Agent": "essionix-jobfinder" },
+            body: JSON.stringify({ keywords, location }),
+            signal: AbortSignal.timeout(30_000),
           });
+          const body = await res.text();
+          if (!res.ok) {
+            if (DEBUG) console.error(`[jooble] ${keywords}@${location}: HTTP ${res.status} body=${body.slice(0, 160)}`);
+            continue;
+          }
+          const data = JSON.parse(body) as { jobs?: any[]; totalCount?: number };
+          if (DEBUG) {
+            console.error(
+              `[jooble] ${keywords}@${location}: ${(data.jobs ?? []).length} jobs (totalCount=${data.totalCount ?? "?"})`,
+            );
+          }
+          for (const j of data.jobs ?? []) {
+            if (!j || !j.title || !j.link) continue;
+            const loc = String(j.location ?? location);
+            const snippet = stripHtml(String(j.snippet ?? ""));
+            out.push({
+              title: String(j.title),
+              company: String(j.company ?? ""),
+              location: loc,
+              url: String(j.link),
+              description: snippet,
+              postedAt: typeof j.updated === "string" ? j.updated : null,
+              salary: j.salary || null,
+              remote: REMOTE.test(`${j.title} ${loc} ${snippet}`),
+            });
+          }
+        } catch (e) {
+          if (DEBUG) console.error(`[jooble] ${keywords}@${location}: error ${(e as Error).message}`);
+          /* una consulta falla → seguimos con las demás */
         }
-      } catch (e) {
-        if (DEBUG) console.error(`[jooble] ${location}: error ${(e as Error).message}`);
-        /* un país falla → seguimos con los demás */
       }
     }
     return out;
