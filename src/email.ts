@@ -39,10 +39,15 @@ export async function sendDigest(
     service: "gmail",
     auth: { user: opts.user, pass: opts.appPassword },
   });
-  await transport.sendMail({
+  const info = await transport.sendMail({
     from: opts.from ?? `JobFinder <${opts.user}>`,
     to: opts.to,
     subject: `JobFinder — ${jobs.length} ofertas nuevas`,
     html: renderDigest(jobs),
   });
+  console.log(
+    `[email] enviado: accepted=${JSON.stringify(info.accepted)} ` +
+      `rejected=${JSON.stringify(info.rejected)} response=${JSON.stringify(info.response)} ` +
+      `id=${info.messageId}`,
+  );
 }

@@ -12,6 +12,10 @@ on:
         description: "Logs verbosos del agente (1 = on)."
         required: false
         default: ""
+      test_email:
+        description: "Enviar un email de prueba y salir (1 = on)."
+        required: false
+        default: ""
 
 permissions:
   contents: write
@@ -37,6 +41,7 @@ jobs:
           DIGEST_TO: ${{ secrets.DIGEST_TO }}
           JOBFINDER_MAX_SCORE: ${{ inputs.max_score }}
           JOBFINDER_DEBUG: ${{ inputs.debug }}
+          JOBFINDER_TEST_EMAIL: ${{ inputs.test_email }}
         run: |
           # Limpiar espacios/saltos de línea que se cuelan al pegar el secret
           # (un header HTTP no admite \n → "Header has invalid value").

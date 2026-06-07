@@ -10,6 +10,27 @@ import type { Job, ScoredJob } from "./types.js";
 const DRY = process.argv.includes("--dry-run");
 
 async function main() {
+  // Diagnóstico: fuerza un email de prueba y termina (no toca el pipeline).
+  if (process.env.JOBFINDER_TEST_EMAIL) {
+    console.log(
+      `[email] TEST: GMAIL_USER set=${!!process.env.GMAIL_USER} ` +
+        `APP_PASSWORD set=${!!process.env.GMAIL_APP_PASSWORD} DIGEST_TO set=${!!process.env.DIGEST_TO}`,
+    );
+    const dummy: ScoredJob = {
+      id: "test", title: "TEST — verificación de email JobFinder", company: "Essionix",
+      location: "Remote", remote: true, url: "https://example.com", description: "test",
+      postedAt: null, source: "test", salary: null,
+      score: { score: 99, reason: "correo de prueba", highlights: ["ok"] },
+    };
+    await sendDigest([dummy], {
+      user: process.env.GMAIL_USER!,
+      appPassword: process.env.GMAIL_APP_PASSWORD!,
+      to: process.env.DIGEST_TO!,
+    });
+    console.log("[email] TEST: sendDigest terminó sin excepción");
+    return;
+  }
+
   const nowISO = new Date().toISOString();
   const cfg = loadRules();
   const profile = readFileSync("config/profile.md", "utf8");
