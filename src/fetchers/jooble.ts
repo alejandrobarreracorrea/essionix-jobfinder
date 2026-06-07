@@ -7,9 +7,10 @@ import type { Fetcher, RawJob } from "../types.js";
 const stripHtml = (s: string) => s.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
 const REMOTE = /\b(remote|remoto|remota|teletrabajo|home\s?office)\b/i;
 
-// SONDA TEMPORAL DE DIAGNÓSTICO — variantes de location para ver cuál acepta Jooble.
-const COUNTRIES = ["", "Bogota", "Mexico", "Colombia", "Remote", "Madrid"];
-const KEYWORDS = "developer";
+// Jooble geocodifica por CIUDAD, no por país ("Colombia"→0, "Bogota"→62). Usamos
+// "Remote" (pozo grande de remotos) + las capitales de cada país hispano (sin acentos).
+const COUNTRIES = ["Remote", "Bogota", "Mexico", "Buenos Aires", "Santiago", "Lima", "Quito", "Madrid"];
+const KEYWORDS = "devops";
 const DEBUG = !!process.env.JOBFINDER_DEBUG;
 
 export const jooble: Fetcher = {
