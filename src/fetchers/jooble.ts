@@ -9,10 +9,18 @@ const REMOTE = /\b(remote|remoto|remota|teletrabajo|home\s?office)\b/i;
 
 // Jooble geocodifica por CIUDAD, no por país ("Colombia"→0, "Bogota"→62). Usamos
 // "Remote" (pozo grande de remotos) + las capitales de cada país hispano (sin acentos).
-// Para Argentina, "Buenos Aires" da poco con "devops"; ampliamos con Cordoba y más keywords.
-const LOCATIONS = [
-  "Remote", "Bogota", "Mexico", "Buenos Aires", "Cordoba",
-  "Santiago", "Lima", "Quito", "Madrid",
+// Argentina no aparece en el índice global jooble.org → sus ciudades van al subdominio
+// ar.jooble.org (host por ubicación).
+const LOCATIONS: { location: string; host: string }[] = [
+  { location: "Remote", host: "jooble.org" },
+  { location: "Bogota", host: "jooble.org" },
+  { location: "Mexico", host: "jooble.org" },
+  { location: "Buenos Aires", host: "ar.jooble.org" },
+  { location: "Cordoba", host: "ar.jooble.org" },
+  { location: "Santiago", host: "jooble.org" },
+  { location: "Lima", host: "jooble.org" },
+  { location: "Quito", host: "jooble.org" },
+  { location: "Madrid", host: "jooble.org" },
 ];
 const KEYWORDS = ["devops", "sre", "cloud"];
 const DEBUG = !!process.env.JOBFINDER_DEBUG;
@@ -28,9 +36,9 @@ export const jooble: Fetcher = {
     if (DEBUG) console.error(`[jooble] key presente (len=${key.length})`);
     const out: RawJob[] = [];
     for (const keywords of KEYWORDS) {
-      for (const location of LOCATIONS) {
+      for (const { location, host } of LOCATIONS) {
         try {
-          const res = await fetch(`https://jooble.org/api/${key}`, {
+          const res = await fetch(`https://${host}/api/${key}`, {
             method: "POST",
             headers: { "Content-Type": "application/json", "User-Agent": "essionix-jobfinder" },
             body: JSON.stringify({ keywords, location }),
