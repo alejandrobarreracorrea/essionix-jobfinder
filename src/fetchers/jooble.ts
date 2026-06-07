@@ -9,12 +9,17 @@ const REMOTE = /\b(remote|remoto|remota|teletrabajo|home\s?office)\b/i;
 
 const COUNTRIES = ["México", "Argentina", "Chile", "Perú", "Ecuador", "Colombia", "España"];
 const KEYWORDS = "devops sre cloud kubernetes";
+const DEBUG = !!process.env.JOBFINDER_DEBUG;
 
 export const jooble: Fetcher = {
   name: "jooble",
   async fetch(): Promise<RawJob[]> {
     const key = process.env.JOOBLE_API_KEY;
-    if (!key) return [];
+    if (!key) {
+      if (DEBUG) console.error("[jooble] sin JOOBLE_API_KEY");
+      return [];
+    }
+    if (DEBUG) console.error(`[jooble] key presente (len=${key.length})`);
     const out: RawJob[] = [];
     for (const location of COUNTRIES) {
       try {
@@ -24,8 +29,17 @@ export const jooble: Fetcher = {
           body: JSON.stringify({ keywords: KEYWORDS, location }),
           signal: AbortSignal.timeout(30_000),
         });
-        if (!res.ok) continue;
-        const data = JSON.parse(await res.text()) as { jobs?: any[] };
+        const body = await res.text();
+        if (!res.ok) {
+          if (DEBUG) console.error(`[jooble] ${location}: HTTP ${res.status} body=${body.slice(0, 200)}`);
+          continue;
+        }
+        const data = JSON.parse(body) as { jobs?: any[]; totalCount?: number };
+        if (DEBUG) {
+          console.error(
+            `[jooble] ${location}: ${(data.jobs ?? []).length} jobs (totalCount=${data.totalCount ?? "?"})`,
+          );
+        }
         for (const j of data.jobs ?? []) {
           if (!j || !j.title || !j.link) continue;
           const loc = String(j.location ?? location);
@@ -41,7 +55,8 @@ export const jooble: Fetcher = {
             remote: REMOTE.test(`${j.title} ${loc} ${snippet}`),
           });
         }
-      } catch {
+      } catch (e) {
+        if (DEBUG) console.error(`[jooble] ${location}: error ${(e as Error).message}`);
         /* un país falla → seguimos con los demás */
       }
     }
