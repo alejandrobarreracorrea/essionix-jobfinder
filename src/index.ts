@@ -97,13 +97,15 @@ async function main() {
     );
     return;
   }
-  if (scored.length > 0) {
-    await sendDigest(scored, {
-      user: process.env.GMAIL_USER!,
-      appPassword: process.env.GMAIL_APP_PASSWORD!,
-      to: process.env.DIGEST_TO!,
-    });
-  }
+  // Siempre manda email: el digest si hay matches, o "sin vacantes nuevas hoy"
+  // (latido diario, para que el silencio nunca se confunda con "se murió").
+  await sendDigest(scored, {
+    user: process.env.GMAIL_USER!,
+    appPassword: process.env.GMAIL_APP_PASSWORD!,
+    to: process.env.DIGEST_TO!,
+    scanned: candidates.length,
+    threshold: cfg.threshold,
+  });
 
   // 7. persistir estado: solo las evaluadas con éxito se marcan vistas
   // (las que el scorer no pudo evaluar se reintentan en la próxima corrida)

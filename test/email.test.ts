@@ -23,4 +23,17 @@ describe("renderDigest", () => {
     const html = renderDigest([low, sj]);
     expect(html.indexOf("SRE Contractor")).toBeLessThan(html.indexOf("Low"));
   });
+
+  it("sin ofertas: muestra mensaje de 'sin vacantes' con conteo y umbral", () => {
+    const html = renderDigest([], { scanned: 21, threshold: 65 });
+    expect(html).toContain("sin vacantes nuevas");
+    expect(html).toContain("21");
+    expect(html).toContain("65");
+  });
+
+  it("sin ofertas sin meta: no rompe", () => {
+    const html = renderDigest([]);
+    expect(html).toContain("No se encontraron vacantes");
+    expect(html).toContain("0 candidatas");
+  });
 });

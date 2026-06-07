@@ -1,7 +1,21 @@
 import nodemailer from "nodemailer";
 import type { ScoredJob } from "./types.js";
 
-export function renderDigest(jobs: ScoredJob[]): string {
+export interface DigestMeta {
+  scanned?: number; // candidatas nuevas revisadas hoy
+  threshold?: number;
+}
+
+export function renderDigest(jobs: ScoredJob[], meta: DigestMeta = {}): string {
+  if (jobs.length === 0) {
+    return `<div style="font-family:system-ui,sans-serif;max-width:640px;margin:0 auto">
+      <h2>JobFinder — sin vacantes nuevas hoy</h2>
+      <p style="color:#475569">No se encontraron vacantes nuevas que cumplan tus criterios de búsqueda${
+        meta.threshold != null ? ` (umbral ${meta.threshold}/100)` : ""
+      }. Revisé ${meta.scanned ?? 0} candidatas nuevas de las fuentes.</p>
+      <p style="color:#94a3b8;font-size:12px">Si esto se repite varios días, considera bajar el umbral o ampliar las reglas en <code>config/rules.json</code>.</p>
+    </div>`;
+  }
   const sorted = [...jobs].sort((a, b) => b.score.score - a.score.score);
   const rows = sorted
     .map(
@@ -33,17 +47,21 @@ function escapeHtml(s: string): string {
 // App Password de Google (requiere 2FA), NO la contraseña normal de la cuenta.
 export async function sendDigest(
   jobs: ScoredJob[],
-  opts: { user: string; appPassword: string; to: string; from?: string },
+  opts: { user: string; appPassword: string; to: string; from?: string } & DigestMeta,
 ): Promise<void> {
   const transport = nodemailer.createTransport({
     service: "gmail",
     auth: { user: opts.user, pass: opts.appPassword },
   });
+  const subject =
+    jobs.length > 0
+      ? `JobFinder — ${jobs.length} ofertas nuevas`
+      : "JobFinder — sin vacantes nuevas hoy";
   const info = await transport.sendMail({
     from: opts.from ?? `JobFinder <${opts.user}>`,
     to: opts.to,
-    subject: `JobFinder — ${jobs.length} ofertas nuevas`,
-    html: renderDigest(jobs),
+    subject,
+    html: renderDigest(jobs, { scanned: opts.scanned, threshold: opts.threshold }),
   });
   console.log(
     `[email] enviado: accepted=${JSON.stringify(info.accepted)} ` +
