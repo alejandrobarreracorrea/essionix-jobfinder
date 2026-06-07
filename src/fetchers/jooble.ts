@@ -8,7 +8,7 @@ const stripHtml = (s: string) => s.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ")
 const REMOTE = /\b(remote|remoto|remota|teletrabajo|home\s?office)\b/i;
 
 const COUNTRIES = ["México", "Argentina", "Chile", "Perú", "Ecuador", "Colombia", "España"];
-const KEYWORDS = "devops sre cloud kubernetes";
+const KEYWORDS = "devops";
 const DEBUG = !!process.env.JOBFINDER_DEBUG;
 
 export const jooble: Fetcher = {
