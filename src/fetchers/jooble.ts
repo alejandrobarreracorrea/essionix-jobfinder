@@ -13,7 +13,7 @@ const REMOTE = /\b(remote|remoto|remota|teletrabajo|home\s?office)\b/i;
 // y ar.jooble.org responde 403 con esta key. Para cubrir AR haría falta una key aparte
 // registrada en ar.jooble.org; queda fuera hasta entonces.
 const LOCATIONS = ["Remote", "Bogota", "Mexico", "Santiago", "Lima", "Quito", "Madrid"];
-const KEYWORDS = ["devops", "sre", "cloud"];
+const KEYWORDS = ["devops", "sre", "cloud", "aws", "oci"];
 const DEBUG = !!process.env.JOBFINDER_DEBUG;
 
 export const jooble: Fetcher = {
