@@ -7,8 +7,9 @@ import type { Fetcher, RawJob } from "../types.js";
 const stripHtml = (s: string) => s.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
 const REMOTE = /\b(remote|remoto|remota|teletrabajo|home\s?office)\b/i;
 
-const COUNTRIES = ["México", "Argentina", "Chile", "Perú", "Ecuador", "Colombia", "España"];
-const KEYWORDS = "devops";
+// SONDA TEMPORAL DE DIAGNÓSTICO — variantes de location para ver cuál acepta Jooble.
+const COUNTRIES = ["", "Bogota", "Mexico", "Colombia", "Remote", "Madrid"];
+const KEYWORDS = "developer";
 const DEBUG = !!process.env.JOBFINDER_DEBUG;
 
 export const jooble: Fetcher = {
