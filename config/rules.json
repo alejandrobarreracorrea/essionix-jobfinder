@@ -1,5 +1,5 @@
 {
-  "threshold": 65,
+  "threshold": 55,
   "include": ["devops","sre","site reliability","cloud","platform engineer","infrastructure","infraestructura","aws","terraform","kubernetes","k8s","dba","oracle","database","base de datos"],
   "exclude": ["on-site","on site","presencial","hybrid required","relocation required","unpaid"]
 }

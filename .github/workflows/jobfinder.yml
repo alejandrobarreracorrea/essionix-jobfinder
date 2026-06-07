@@ -51,6 +51,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add state/seen.json
-          git diff --staged --quiet || git commit -m "chore: actualizar estado seen.json"
+          git add state/
+          git diff --staged --quiet || git commit -m "chore: actualizar estado (seen + sources)"
           git push

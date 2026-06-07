@@ -5,6 +5,7 @@ import { loadRules, passesRules } from "./rules.js";
 import { loadSeen, saveSeen, filterUnseen, markSeen, purge } from "./state.js";
 import { scoreBatch } from "./scorer.js";
 import { sendDigest } from "./email.js";
+import { loadSourcesState, saveSourcesState, expandIfDue, activeFetchers } from "./sources.js";
 import type { Job, ScoredJob } from "./types.js";
 
 const DRY = process.argv.includes("--dry-run");
@@ -36,9 +37,16 @@ async function main() {
   const profile = readFileSync("config/profile.md", "utf8");
   const seen = loadSeen();
 
+  // 0. cobertura progresiva: enciende 2 portales nuevos cada 2 días (se persiste al final).
+  const srcState = expandIfDue(loadSourcesState(), FETCHERS.length, nowISO);
+  const active = activeFetchers(FETCHERS, srcState);
+  console.log(
+    `[sources] activas ${active.length}/${FETCHERS.length}: ${active.map((f) => f.name).join(", ")}`,
+  );
+
   // 1. fetch en paralelo, tolerante a fallos
   const raw = await Promise.all(
-    FETCHERS.map(async (f) => {
+    active.map(async (f) => {
       try {
         const items = await f.fetch();
         console.log(`[fetch] ${f.name}: ${items.length}`);
@@ -107,10 +115,11 @@ async function main() {
     threshold: cfg.threshold,
   });
 
-  // 7. persistir estado: solo las evaluadas con éxito se marcan vistas
+  // 7. persistir estado: vistas (solo las evaluadas) + cobertura progresiva
   // (las que el scorer no pudo evaluar se reintentan en la próxima corrida)
   const next = purge(markSeen(seen, evaluated, nowISO), nowISO, 60);
   saveSeen(next);
+  saveSourcesState(srcState);
 }
 
 main().catch((e) => {
