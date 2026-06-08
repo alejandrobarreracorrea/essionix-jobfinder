@@ -95,6 +95,11 @@ async function main() {
   }
   scored.sort((a, b) => b.score.score - a.score.score);
   console.log(`[pipeline] sobre umbral ${cfg.threshold}: ${scored.length}`);
+  if (process.env.JOBFINDER_DEBUG) {
+    for (const j of scored) {
+      console.error(`[passed] ${j.score.score} [${j.location}] ${j.title.slice(0, 60)}`);
+    }
+  }
 
   // 6. email
   if (DRY) {

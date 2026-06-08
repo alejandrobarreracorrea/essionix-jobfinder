@@ -11,8 +11,12 @@ const SYSTEM =
   "Devuelve SOLO un array JSON (sin markdown, sin ```, sin texto antes ni después), " +
   'un objeto por oferta, con: "id" (el id exacto de la oferta), "score" (número 0-100), ' +
   '"reason" (1 frase), "highlights" (array de strings). ' +
-  "Premia: contractor/freelance, remoto, español, DevOps/SRE/Cloud, y el combo SRE+DBA. " +
-  "Penaliza: on-site, relocation obligatorio, roles solo-junior, y puestos no técnicos.";
+  "REGLA DURA — el usuario SOLO acepta trabajo 100% remoto: si la oferta es presencial, " +
+  "on-site, híbrida, o exige relocación o estar físicamente en una oficina o ciudad específica, " +
+  'asígnale score 0 sin excepción (y dilo en "reason"). En caso de duda sobre si es presencial, ' +
+  "trátala como NO remota (score 0). Solo ofertas claramente remotas reciben score > 0. " +
+  "Entre las remotas, premia: contractor/freelance, español, DevOps/SRE/Cloud/AWS/OCI, y el combo " +
+  "SRE+DBA. Penaliza roles solo-junior y puestos no técnicos.";
 
 // Puntúa un LOTE de ofertas en una sola llamada al Agent SDK (autenticado con la
 // suscripción vía CLAUDE_CODE_OAUTH_TOKEN — sin saldo de API). Devuelve un Map id→Score
