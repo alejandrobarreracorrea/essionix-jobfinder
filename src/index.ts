@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { FETCHERS } from "./fetchers/index.js";
 import { normalize } from "./normalize.js";
-import { loadRules, passesRules } from "./rules.js";
+import { loadRules, passesRules, isRecent } from "./rules.js";
 import { loadSeen, saveSeen, filterUnseen, markSeen, purge } from "./state.js";
 import { scoreBatch } from "./scorer.js";
 import { sendDigest } from "./email.js";
@@ -59,13 +59,15 @@ async function main() {
   );
   const jobs: Job[] = raw.flat();
 
-  // 2. dedup por id entre fuentes + 3. reglas + 4. no vistos
+  // 2. dedup por id entre fuentes + 3. reglas + frescura + 4. no vistos
   const byId = new Map(jobs.map((j) => [j.id, j]));
   const candidates = filterUnseen(
-    [...byId.values()].filter((j) => passesRules(j, cfg)),
+    [...byId.values()].filter((j) => passesRules(j, cfg) && isRecent(j, cfg.maxAgeDays, nowISO)),
     seen,
   );
-  console.log(`[pipeline] candidatas tras reglas+dedup: ${candidates.length}`);
+  console.log(
+    `[pipeline] candidatas tras reglas+frescura(${cfg.maxAgeDays ?? "∞"}d)+dedup: ${candidates.length}`,
+  );
 
   // 5. score IA en lotes (umbral). JOBFINDER_MAX_SCORE limita cuántas puntuar (debug).
   const maxScore = process.env.JOBFINDER_MAX_SCORE

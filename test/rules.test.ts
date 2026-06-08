@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { passesRules, type RulesConfig } from "../src/rules.js";
+import { passesRules, isRecent, type RulesConfig } from "../src/rules.js";
 import type { Job } from "../src/types.js";
 
 const cfg: RulesConfig = {
@@ -26,5 +26,24 @@ describe("passesRules", () => {
   });
   it("descarta si matchea un exclude (red-flag)", () => {
     expect(passesRules({ ...base, description: "AWS pero presencial obligatorio" }, cfg)).toBe(false);
+  });
+});
+
+describe("isRecent", () => {
+  const now = "2026-06-08T00:00:00Z";
+  it("acepta una vacante fresca (dentro del límite)", () => {
+    expect(isRecent({ ...base, postedAt: "2026-06-01T00:00:00Z" }, 21, now)).toBe(true);
+  });
+  it("descarta una vacante vieja (fuera del límite)", () => {
+    expect(isRecent({ ...base, postedAt: "2026-04-01T00:00:00Z" }, 21, now)).toBe(false);
+  });
+  it("sin fecha de publicación → no filtra (no sabemos la edad)", () => {
+    expect(isRecent({ ...base, postedAt: null }, 21, now)).toBe(true);
+  });
+  it("sin límite configurado → no filtra", () => {
+    expect(isRecent({ ...base, postedAt: "2020-01-01T00:00:00Z" }, undefined, now)).toBe(true);
+  });
+  it("fecha inválida → no filtra", () => {
+    expect(isRecent({ ...base, postedAt: "no-es-fecha" }, 21, now)).toBe(true);
   });
 });
