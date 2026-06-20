@@ -5,6 +5,7 @@ import { loadRules, passesRules, isRecent } from "./rules.js";
 import { loadSeen, saveSeen, filterUnseen, markSeen, purge } from "./state.js";
 import { scoreBatch } from "./scorer.js";
 import { sendDigest } from "./email.js";
+import { filterLive } from "./liveness.js";
 import { loadSourcesState, saveSourcesState, expandIfDue, activeFetchers } from "./sources.js";
 import type { Job, ScoredJob } from "./types.js";
 
@@ -103,10 +104,14 @@ async function main() {
     }
   }
 
+  // 5.5. verificar que el link siga vivo (descarta "no longer available" de agregadores).
+  const live = await filterLive(scored);
+  console.log(`[pipeline] vivas ${live.length}/${scored.length} (descartadas ${scored.length - live.length} muertas)`);
+
   // 6. email
   if (DRY) {
     console.log(
-      scored
+      live
         .map((j) => `${j.score.score}  ${j.title} — ${j.company} (${j.url})`)
         .join("\n"),
     );
@@ -114,7 +119,7 @@ async function main() {
   }
   // Siempre manda email: el digest si hay matches, o "sin vacantes nuevas hoy"
   // (latido diario, para que el silencio nunca se confunda con "se murió").
-  await sendDigest(scored, {
+  await sendDigest(live, {
     user: process.env.GMAIL_USER!,
     appPassword: process.env.GMAIL_APP_PASSWORD!,
     to: process.env.DIGEST_TO!,
