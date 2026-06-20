@@ -16,6 +16,10 @@ on:
         description: "Enviar un email de prueba y salir (1 = on)."
         required: false
         default: ""
+      liveness_probe:
+        description: "Probar verificación de liveness y salir (1 = on)."
+        required: false
+        default: ""
 
 permissions:
   contents: write
@@ -43,6 +47,7 @@ jobs:
           JOBFINDER_MAX_SCORE: ${{ inputs.max_score }}
           JOBFINDER_DEBUG: ${{ inputs.debug }}
           JOBFINDER_TEST_EMAIL: ${{ inputs.test_email }}
+          JOBFINDER_LIVENESS_PROBE: ${{ inputs.liveness_probe }}
         run: |
           # Limpiar espacios/saltos de línea que se cuelan al pegar el secret
           # (un header HTTP no admite \n → "Header has invalid value").

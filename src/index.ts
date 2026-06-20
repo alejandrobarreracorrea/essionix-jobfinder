@@ -5,13 +5,23 @@ import { loadRules, passesRules, isRecent } from "./rules.js";
 import { loadSeen, saveSeen, filterUnseen, markSeen, purge } from "./state.js";
 import { scoreBatch } from "./scorer.js";
 import { sendDigest } from "./email.js";
-import { filterLive } from "./liveness.js";
+import { filterLive, isDead } from "./liveness.js";
 import { loadSourcesState, saveSourcesState, expandIfDue, activeFetchers } from "./sources.js";
 import type { Job, ScoredJob } from "./types.js";
 
 const DRY = process.argv.includes("--dry-run");
 
 async function main() {
+  // Diagnóstico: prueba la verificación de liveness contra URLs reales y termina.
+  if (process.env.JOBFINDER_LIVENESS_PROBE) {
+    const urls = [
+      "https://jooble.org/desc/2493811801290460880?ckey=sre&rgn=55157&pos=9&p=1&cid=12639",
+      "https://jooble.org/desc/2837788247818270859?ckey=oci&rgn=55157&pos=3&p=1&cid=12639",
+    ];
+    for (const u of urls) console.log(`[probe] dead=${await isDead(u)} ${u.slice(0, 60)}`);
+    return;
+  }
+
   // Diagnóstico: fuerza un email de prueba y termina (no toca el pipeline).
   if (process.env.JOBFINDER_TEST_EMAIL) {
     console.log(
