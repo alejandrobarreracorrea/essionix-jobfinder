@@ -99,7 +99,7 @@ async function main() {
   console.log(`[pipeline] sobre umbral ${cfg.threshold}: ${scored.length}`);
   if (process.env.JOBFINDER_DEBUG) {
     for (const j of scored) {
-      console.error(`[passed] ${j.score.score} [${j.location}] ${j.title.slice(0, 60)}`);
+      console.error(`[passed] ${j.score.score} ${j.source} posted=${j.postedAt} ${j.url}`);
     }
   }
 
