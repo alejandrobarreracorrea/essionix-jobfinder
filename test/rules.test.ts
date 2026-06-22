@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { passesRules, isRecent, type RulesConfig } from "../src/rules.js";
+import { passesRules, isRecent, thresholdFor, type RulesConfig } from "../src/rules.js";
 import type { Job } from "../src/types.js";
 
 const cfg: RulesConfig = {
@@ -45,5 +45,18 @@ describe("isRecent", () => {
   });
   it("fecha inválida → no filtra", () => {
     expect(isRecent({ ...base, postedAt: "no-es-fecha" }, 21, now)).toBe(true);
+  });
+});
+
+describe("thresholdFor", () => {
+  const c: RulesConfig = { ...cfg, threshold: 55, sourceThresholds: { jooble: 75 } };
+  it("usa el umbral específico de la fuente si existe", () => {
+    expect(thresholdFor("jooble", c)).toBe(75);
+  });
+  it("usa el umbral general para otras fuentes", () => {
+    expect(thresholdFor("remoteok", c)).toBe(55);
+  });
+  it("sin sourceThresholds → siempre el general", () => {
+    expect(thresholdFor("jooble", { ...cfg, threshold: 55 })).toBe(55);
   });
 });

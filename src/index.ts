@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { FETCHERS } from "./fetchers/index.js";
 import { normalize } from "./normalize.js";
-import { loadRules, passesRules, isRecent } from "./rules.js";
+import { loadRules, passesRules, isRecent, thresholdFor } from "./rules.js";
 import { loadSeen, saveSeen, filterUnseen, markSeen, purge } from "./state.js";
 import { scoreBatch } from "./scorer.js";
 import { sendDigest } from "./email.js";
@@ -97,7 +97,7 @@ async function main() {
         const s = scores.get(job.id);
         if (!s) continue; // no devuelta → no evaluada → se reintenta
         evaluated.push(job);
-        if (s.score >= cfg.threshold) scored.push({ ...job, score: s });
+        if (s.score >= thresholdFor(job.source, cfg)) scored.push({ ...job, score: s });
       }
       console.log(
         `[score] lote ${i / BATCH + 1}: ${scores.size}/${chunk.length} puntuadas (${Date.now() - t0}ms)`,
@@ -107,7 +107,9 @@ async function main() {
     }
   }
   scored.sort((a, b) => b.score.score - a.score.score);
-  console.log(`[pipeline] sobre umbral ${cfg.threshold}: ${scored.length}`);
+  console.log(
+    `[pipeline] sobre umbral (base ${cfg.threshold}, jooble ${thresholdFor("jooble", cfg)}): ${scored.length}`,
+  );
   if (process.env.JOBFINDER_DEBUG) {
     for (const j of scored) {
       console.error(`[passed] ${j.score.score} ${j.source} posted=${j.postedAt} ${j.url}`);

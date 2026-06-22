@@ -6,10 +6,16 @@ export interface RulesConfig {
   include: string[];
   exclude: string[];
   maxAgeDays?: number; // descarta vacantes con fecha más vieja que esto (links muertos)
+  sourceThresholds?: Record<string, number>; // umbral más alto por fuente (ej. jooble: 75)
 }
 
 export function loadRules(path = "config/rules.json"): RulesConfig {
   return JSON.parse(readFileSync(path, "utf8")) as RulesConfig;
+}
+
+// Umbral efectivo para una fuente: el específico si existe, o el general.
+export function thresholdFor(source: string, cfg: RulesConfig): number {
+  return cfg.sourceThresholds?.[source] ?? cfg.threshold;
 }
 
 export function passesRules(job: Job, cfg: RulesConfig): boolean {
